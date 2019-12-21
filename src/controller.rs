@@ -49,7 +49,7 @@ impl<'b> Controller<'b> {
                 }
                 Ok(mut reader) => {
                     let result = if self.config.loop_through {
-                        let mut printer = SimplePrinter::new();
+                        let mut printer = SimplePrinter::new(self.config);
                         self.print_file(reader, &mut printer, writer, *input_file)
                     } else {
                         let mut printer = InteractivePrinter::new(

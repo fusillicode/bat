@@ -44,15 +44,17 @@ pub trait Printer {
     ) -> Result<()>;
 }
 
-pub struct SimplePrinter;
+pub struct SimplePrinter<'a> {
+    config: &'a Config<'a>,
+}
 
-impl SimplePrinter {
-    pub fn new() -> Self {
-        SimplePrinter {}
+impl<'a> SimplePrinter<'a> {
+    pub fn new(config: &'a Config<'a>) -> Self {
+        SimplePrinter { config }
     }
 }
 
-impl Printer for SimplePrinter {
+impl<'a> Printer for SimplePrinter<'a> {
     fn print_header(&mut self, _handle: &mut dyn Write, _file: InputFile) -> Result<()> {
         Ok(())
     }
@@ -72,8 +74,20 @@ impl Printer for SimplePrinter {
         _line_number: usize,
         line_buffer: &[u8],
     ) -> Result<()> {
-        if !out_of_range {
+        if out_of_range {
+            return Ok(());
+        }
+        if self.config.output_wrap == OutputWrap::None {
             handle.write_all(line_buffer)?;
+        } else {
+            handle.write_all(
+                &line_buffer
+                    .chunks(self.config.term_width)
+                    .fold(String::new(), |acc, c| {
+                        format!("{}{}\n", acc, String::from_utf8_lossy(c))
+                    })
+                    .into_bytes(),
+            )?;
         }
         Ok(())
     }
